@@ -317,7 +317,17 @@ fn run_with_repo(logger: &slog::Logger, config: &Config, repo: &git2::Repository
                 false => current
                     .dest_commit
                     .summary()
-                    .filter(|&msg| summary_counts[msg] == 1)
+                    .and_then(|summary| {
+                        let summary = summary.trim_start_matches("fixup! ");
+
+                        if summary.is_empty() {
+
+                            return None;
+                        } else {
+                            Some(summary)
+                        }
+                    })
+                    .filter(|&msg| summary_counts.get(msg).is_some_and(|&count| count == 1))
                     .unwrap_or(&dest_commit_id),
             };
             let diff = repo
